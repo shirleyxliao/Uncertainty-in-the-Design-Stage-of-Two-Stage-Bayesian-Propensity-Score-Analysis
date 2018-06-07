@@ -100,13 +100,18 @@ Outputs PSA.output, a list:
 
 > Code for application
 
->> app.data.R
+>> application_data_simulated_PM25.csv
 
-List object containing "treatment" (vector length 22,723), "covariates" 22,723 by 17 matrix of covariates, "outcome" (vector length 22,723)
+Data from Cummisky et. al. stripped of Medicare data and with simulated PM25 values. Application in paper was performed with true PM25 values but we do not have the rights to release this data.
 
 >> data.manip.R
 
-Reads in original source_oriented_data_noMEDICARE.csv, performs a complete case analysis, restricts regions to Northeast, Southeast and Industrial Midwest, dichotomizes the exposure, removes some covariates and re-organizes relevant data into a list app.data (written as app.data.R).
+Reads in original application_data_simulated_PM25.csv, performs a complete case analysis, restricts regions to Northeast, Southeast and Industrial Midwest, dichotomizes the exposure, removes some covariates and re-organizes relevant data into a list app.data (written as app.data.R).
+
+>> app.data.R
+
+List object containing "treatment" (vector length 22,723), "covariates" 22,723 by 17 matrix of covariates, "outcome" (vector length 22,723)
+NOTE: this data has simulated PM25 values and when analyzed will not return the same results as shown in the paper. 
 
 >>run.app.R
 
@@ -114,6 +119,3 @@ Calls on PSAfxn.R and BPSAfxn.R, performs both PSA and BPSA on app.data.R
 
 > Data for application
 
->> source_oriented_data_noMEDICARE.csv
-
-Data from Cummisky et. al. stripped of Medicare data. 
