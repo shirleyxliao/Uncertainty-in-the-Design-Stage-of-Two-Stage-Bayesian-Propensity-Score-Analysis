@@ -1,11 +1,7 @@
 # Data generation
 ## data.generation.R
 
-Generates 200 datasets following specifications outlined in the Simulation Data Generation section. In order to create the 4 "different" sets of replicated datasets in confound_data.R, instru_data.R, instru_prog_data.R, and instru_prog_noise_data.R, we may toggle the number of instrumental/prognostic/noise variables which are included in the covariate matrix output, though the core data generating mechanism is always the same.
-
-## confound_data.R, instru_data.R, instru_prog_data.R, instru_prog_noise_data.R
-
-Each contain 200 datasets generated with data.generation.R in a list form. Each dataset is a list consisting of outcome (vector), treatment (vector), truePS (vector) and covariates. Covariates are the only point of difference between these four files, as confound_data.R includes only confounders, instru_data.R includes confounders and instrumental variables, instru_prog_data.R includes confounders, instrumental and prognostic variables and instru_prog_noise_data.R includes confounders, instrumental, prognostic and noise variables. 
+Generates 200 datasets following specifications outlined in the Simulation Data Generation section. In order to create the 4 data generating mechanisms under which 200 sets of replicated datasets are simulated, we may toggle the number of instrumental/prognostic/noise variables which are included in the covariate matrix output, though the core data generating mechanism is always the same.
 
 # Run code
 ## designfunction.R
