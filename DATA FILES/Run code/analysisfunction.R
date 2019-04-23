@@ -14,6 +14,35 @@ logit = function(x){
   log(x/(1-x))
 }
 
+mu1fxn = function(treatment,outcome,psvector,y1){
+  ((treatment*outcome/psvector) -
+     ((treatment-psvector)*y1/psvector))
+  
+}
+
+mu0fxn = function(treatment,outcome,psvector,y0){
+  
+  ((1-treatment)*outcome/(1-psvector) +
+     (treatment-psvector)*y0/(1-psvector))
+}
+
+drsdfxn = function(psvector,dr_mu0,dr_mu1,ey1,ey0,y1,y0,outcome,treatment){
+  n = length(psvector)
+  ipw_y1 = (treatment*outcome/psvector)
+  ipw_y0 = ((1-treatment)*outcome/(1-psvector))
+  ipw_mu1 = sum(ipw_y1)/sum(treatment/psvector)
+  ipw_mu0 = sum(ipw_y0)/sum((1-treatment)/(1-psvector))
+  
+  sigma_ipw2 = sum((treatment*(outcome-ipw_mu1)/psvector - (1-treatment)*(outcome-ipw_mu0)/(1-psvector))^2)/n
+  
+  #sigma_ipw2 = mean((y1 - dr_mu1)^2/psvector +(y0 - dr_mu0)^2/(1-psvector))
+  
+  sqrt( sigma_ipw2 -
+          (mean(sqrt((1-psvector)/psvector)*(y1 - dr_mu1) +
+                  sqrt(psvector/(1-psvector))*(y0-dr_mu0)))^2)/sqrt(length(psvector))
+}
+
+
 #fxn for DR 
 thetafxn = function(treatment,outcome,psvector,y1,y0){
   ((treatment*outcome/psvector) -
@@ -59,6 +88,7 @@ PS.analysis = function(psvector, ##psvector = input vector of ps
   strata.prop = rep(NA,strat.cut)
   strata.TE = rep(NA,strat.cut)
   cov.balance = NA
+  sandwich.se = NA
   
 ###############################################################
    #Caliper MATCHING with REPLACEMENT
@@ -114,6 +144,7 @@ if(method=="caliper.matching"){ #caliper matching with replacement
    sd.effect = rep(NA,match.iter)
    cond.n.match = matrix(NA,nrow=match.iter,ncol=2)
    all.cov.balance = rep(NA,match.iter)
+   sandwich.ses = rep(NA,match.iter)
    
    #perform multiple implementations conditional on a single PS
    for(r in 1:match.iter){
@@ -135,11 +166,13 @@ if(method=="caliper.matching"){ #caliper matching with replacement
      perc.used[r] = nmatched/n
      
      #use sandwich estimator to calculate conditional var?
-     if(sandwich.est){
+
      des = svydesign(~0,data=matchdata,weights=matchdata$weights)
-     matchfit = svyglm(outcome~treatment,design=des)} else{
-       matchfit = lm(outcome~treatment,data=matchdata,weights=matchdata$weights)
-     }
+     matchfit = svyglm(outcome~treatment,design=des)
+     sandwich.ses[r] = summary(matchfit)$coefficients[2,2]
+     
+    matchfit = lm(outcome~treatment,data=matchdata,weights=matchdata$weights)
+     
      
      #load in estimated ATE and SE
      effect[r] = coef(matchfit)[2]
@@ -157,7 +190,12 @@ if(method=="caliper.matching"){ #caliper matching with replacement
    #ONLY for caliper matching: ATE is outputted as draws from the marginal
    ##posterior distirbution of Delta
    estimated.effect = matrix(rnorm(S*match.iter,effect,sd.effect),ncol=match.iter)
-   estimated.se = mean(sd.effect)
+   
+   if(sandwich.est){
+     estimated.se = mean(sandwich.ses) } else{
+   estimated.se = mean(sd.effect)}
+   
+   sandwich.se = mean(sandwich.ses)
    
    #cond.ev.nu = apply(nu,1,mean)
    n.treat = mean(cond.n.match[,2])
@@ -191,9 +229,12 @@ if(method=="caliper.matching"){ #caliper matching with replacement
  nu[rownames(matchdata),1] = matchdata$weights
   
  #fit weighted linear regression to obtain ATE and (sandwich optional) SE
- if(sandwich.est){
+
   des = svydesign(~0,data=matchdata,weights=matchdata$weights)
-  matchfit = svyglm(outcome~treatment,design=des) } else{
+  matchfit = svyglm(outcome~treatment,design=des)
+  sandwich.se = summary(matchfit)$coefficients[2,2]
+  
+  if(!sandwich.est){
     matchfit = lm(outcome~treatment,data=matchdata,weights=matchdata$weights)
   }
 
@@ -217,32 +258,61 @@ if(method=="caliper.matching"){ #caliper matching with replacement
   #DOUBLY ROBUST ESTIMATION
 } else if(method =="dr"){
   
+  regdataset = data.frame(outcome,treatment,covardataset)
+  treatment.form = formula(paste("treatment ~ ",paste(names(data.frame(covardataset)),
+                                                      collapse=" + "),sep=""))
+  outcome.form = formula(paste("outcome ~ ",paste(names(data.frame(covardataset)),
+                                                  collapse=" + "),sep=""))
+  
   #calculate inverse probability weights
   weights = treatment/psvector + (1-treatment)/(1-psvector) 
-
-  #fit potential outcome regression model, impute counterfactual outcomes
-  regdataset = data.frame(outcome,treatment,covardataset)
   
-  fit = suppressWarnings(lm(outcome~.,data=regdataset))
-    atecovars1 =  regdataset #counterfactual "all treatment" world
-    atecovars1$treatment = rep(1,n)
+  #fit potential outcome regression model, impute counterfactual outcomes
+  
+  #our DR estimate
+  fit1 = suppressWarnings(lm(outcome.form,data=regdataset[treatment==1,]))
+  fit0 = suppressWarnings(lm(outcome.form,data=regdataset[treatment==0,]))
+  
+  #imputed outcomes
+  y0 = predict(fit0,newdata=regdataset)
+  y1 = predict(fit1,newdata=regdataset)
+  
+  #theta = thetafxn(treatment,outcome,psvector,y0,y1)
+  mu1 = mu1fxn(treatment,outcome,psvector,y1)
+  mu0 = mu0fxn(treatment,outcome,psvector,y0)
+  #theta = thetafxn(treatment,outcome,psvector,y0,y1)
+  estimated.effect = mean(mu1)-mean(mu0)
+  estimated.se = drsdfxn(psvector,dr_mu0=mean(mu0),dr_mu1=mean(mu1),ey1=mu1,ey0=mu0,y1,y0,outcome,treatment)
+  
+  nu = weights
+  cov.balance = covar.bal(dataset[treatment==1,],
+                          dataset[treatment==0,],
+                          names(dataset)[!names(dataset)%in%c("outcome","treatment","psvector")],
+                          weights[treatment==1],
+                          weights[treatment==0])
+  
+  
+  
+  #fit = suppressWarnings(lm(outcome~.,data=regdataset))
+    #atecovars1 =  regdataset #counterfactual "all treatment" world
+    #atecovars1$treatment = rep(1,n)
 
-    atecovars0 =  regdataset #counterfactual "all control" world
-    atecovars0$treatment = rep(0,n)
+    #atecovars0 =  regdataset #counterfactual "all control" world
+    #atecovars0$treatment = rep(0,n)
     
     #imputed outcomes
-    y0 = predict(fit,newdata=atecovars0)
-    y1 = predict(fit,newdata=atecovars1)
+    #y0 = predict(fit,newdata=atecovars0)
+    #y1 = predict(fit,newdata=atecovars1)
   
-    theta = thetafxn(treatment,outcome,psvector,y0,y1)
-    estimated.effect = mean(theta)
-    estimated.se = sqrt(sum((theta-estimated.effect)^2)/n^2)
-    nu = weights
-    cov.balance = covar.bal(dataset[treatment==1,],
-              dataset[treatment==0,],
-              names(dataset)[!names(dataset)%in%c("outcome","treatment","psvector")],
-              weights[treatment==1],
-              weights[treatment==0])
+    #theta = thetafxn(treatment,outcome,psvector,y0,y1)
+   # estimated.effect = mean(theta)
+    #estimated.se = sqrt(sum((theta-estimated.effect)^2)/n^2)
+    #nu = weights
+    #cov.balance = covar.bal(dataset[treatment==1,],
+     #         dataset[treatment==0,],
+     #         names(dataset)[!names(dataset)%in%c("outcome","treatment","psvector")],
+      #        weights[treatment==1],
+      #        weights[treatment==0])
     
 #######################################################################
     #IPW
@@ -252,11 +322,13 @@ if(method=="caliper.matching"){ #caliper matching with replacement
   weights = treatment/psvector + (1-treatment)/(1-psvector) 
   
   #fit weighted regression with or without sandwich estimators
-  if(sandwich.est){
+  
   #Independent Sampling design (with replacement)
   des = svydesign(~0,data=dataset,weights=weights)
   fit = svyglm(outcome~treatment,design=des) #sandwich estimator 
-  }else { 
+  sandwich.se = summary(fit)$coef[2,2]
+  
+  if(!sandwich.est){ 
     fit = lm(outcome~treatment,data=dataset,weights=weights)
     }
 
@@ -347,5 +419,5 @@ if(method=="caliper.matching"){ #caliper matching with replacement
               "PercDataUsed" = percent.data.used,"Nu" = nu, "Ntreat" = n.treat, 
               "Ncontrol" = n.control,
               "Prop.Treated.Strata" = strata.prop, "Indi.Strata.TE" = strata.TE,
-              "CovariateBalance" = cov.balance))
+              "CovariateBalance" = cov.balance,"Sandwich SE" = sandwich.se))
 }

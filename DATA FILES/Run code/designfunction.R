@@ -17,7 +17,7 @@ PS.design = function(treatment, #treatment vector
   ###Bayesian PS estimation
   if(bayes){
     #draw from posterior distribution of alpha
-    posteriors = as.matrix(MCMClogit(treatment~.,data=dataset,burnin=5*K,mcmc=K*50,thin=50))
+    posteriors = as.matrix(MCMClogit(treatment~.,data=dataset,burnin=2*K,mcmc=K*100,thin=100))
     
     covars = as.matrix(cbind(rep(1,n),covardataset))
     ps = expit(covars%*%t(posteriors)) #PS estimated from draws of alpha
