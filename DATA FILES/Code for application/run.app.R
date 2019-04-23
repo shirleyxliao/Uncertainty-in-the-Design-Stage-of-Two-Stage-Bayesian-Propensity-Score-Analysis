@@ -1,5 +1,5 @@
 #####run file
-foldername = "DissertationJune"
+foldername = "January19"
 
 #load run fxns
 source(paste('/n/home10/silverfoxflower/',foldername,'/PSAfxn.R',sep=""))
