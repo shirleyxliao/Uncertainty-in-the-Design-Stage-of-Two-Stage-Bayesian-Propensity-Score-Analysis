@@ -7,10 +7,17 @@ expit = function(x){
 
 ###########
 n =1000 #sample size
-M = 200 #replications
-p = 15 #covariates
-alpha = matrix(c(0,rep(.75,p)),nrow=1) #covariates for PS model
-beta = matrix(c(.1,.2,.3,.4,rep(0,p-3)),nrow=1) #covariates for outcome model
+M = 500 #replications
+
+instru = 5 #number of instruments
+prog = 5 #number of prognostic variables
+noise = 5
+confound = 5
+p = confound+instru+prog+noise
+
+identify = c(rep(0,confound),rep(1,instru),rep(2,prog),rep(3,noise))
+alpha = matrix(c(0,rep(.75,confound),rep(0.75,instru),rep(0,prog+noise)),nrow=1) #covariates for PS model
+beta = matrix(c(0.1,seq(0.2,0.4,length=confound),rep(0,instru),rep(0.5,prog),rep(0,noise)),nrow=1) #covariates for outcome model
 D = diag(rep(1,p)) #correlation matrix for covaritates: all covariates are independent
 sigma = 1 #variance for error term of the outcome model
 
@@ -46,7 +53,8 @@ outcomes[,m] = outcome
 continuousdata[[m]] = list()
 
 continuousdata[[m]][["outcome"]] = outcome
-continuousdata[[m]][["covariates"]] = X[,2:(p+1)] #vary this to include instruments in the analysis
+X = X[,-1]
+continuousdata[[m]][["covariates"]] = X[,1:(confound)] #vary this to include instruments in the analysis
 continuousdata[[m]][["treatment"]] = treatmentmatrix
 continuousdata[[m]][["truePS"]] = truePS[,m]
 
@@ -55,5 +63,6 @@ continuousdata[[m]][["truePS"]] = truePS[,m]
 
 continuousdata[["trueATE"]] = trueATE
 
-save(continuousdata,file="~/Dropbox/Shirley's Dissertation/1st Paper/Final Code/Simulation/Data generation/data.R")
+save(continuousdata,file="/Users/shirleyliao/Dropbox/Shirley's Dissertation/Paper1/DATA FILES/Data generation/instru_prog_noise_data.R")
 
+####
