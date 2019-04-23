@@ -1,5 +1,3 @@
-README for DATA FILES
-
 # Data generation
 ## data.generation.R
 
@@ -28,33 +26,33 @@ Included function performs BPSA (calls designfunction.R and analysisfunction.R) 
 
 Outputs bpsa.result, a large matrix with row names:
  
--- ATE (estimate of delta)
-—- between.design.SE (SD of ATE estimates across K iterations)
-—- within.design.SE (average of K SE estimates)
-—- within.design.sandwich.SE (average of K SE estimates, calculated with a robust sandwich estimator)
--- method (implementation method)
--- rubinse (marginal SE of delta)
--- interval.lower (lower bound for a 95% credible interval)
--- inteval.upper (upper bound for a 95% credible interval)
--- percused (percentage of data used, only relevant for matching implementations)
--- marginal.SD.nu (marginal SD of nu, averaged over within-observation standard deviation of nu across K draws of the PS)
--- marginal SD.nu.treated (marginal SD of nu for treated observations)
--- marginal.SD.nu.control (marginal SD of nu for control observations)
--- ncontrol (number of control observations in matched set, only relevant for matching algorithms)
--- ntreat (number of treated observations in matched set, only relevant for matching algorithms)
+- ATE (estimate of delta)
+- between.design.SE (SD of ATE estimates across K iterations)
+- within.design.SE (average of K SE estimates)
+- within.design.sandwich.SE (average of K SE estimates, calculated with a robust sandwich estimator)
+- method (implementation method)
+- rubinse (marginal SE of delta)
+- interval.lower (lower bound for a 95% credible interval)
+- inteval.upper (upper bound for a 95% credible interval)
+- percused (percentage of data used, only relevant for matching implementations)
+- marginal.SD.nu (marginal SD of nu, averaged over within-observation standard deviation of nu across K draws of the PS)
+- marginal SD.nu.treated (marginal SD of nu for treated observations)
+- marginal.SD.nu.control (marginal SD of nu for control observations)
+- ncontrol (number of control observations in matched set, only relevant for matching algorithms)
+- ntreat (number of treated observations in matched set, only relevant for matching algorithms)
 
 ## PSAfxn.R
 Performs PSA (calls designfunction.R and analysisfunction.R) for all 5 implementations, assembles outputs for all implementations. Used for primary simulation.
 
 Outputs psa.result, a matrix with row names:
 
--- ATE (estimated treatment effect)
--- se (SE estimated via asymptotic methods)
--- method (implementation method)
--- percused (percentage of data used, only relevant for matching implementations)
--- ncontrol (number of control observations in matched set, only relevant for matching algorithms)
--- ntreat (number of treated observations in matched set, only relevant for matching algorithms)
--- cov.balance (measure covariate balance, calculated via standardized difference in covariates between treated and control, averaged over covariates)
+- ATE (estimated treatment effect)
+- se (SE estimated via asymptotic methods)
+- method (implementation method)
+- percused (percentage of data used, only relevant for matching implementations)
+- ncontrol (number of control observations in matched set, only relevant for matching algorithms)
+- ntreat (number of treated observations in matched set, only relevant for matching algorithms)
+- cov.balance (measure covariate balance, calculated via standardized difference in covariates between treated and control, averaged over covariates)
 
 # Code for application
 
@@ -66,7 +64,7 @@ List object containing "treatment" (vector length 22,723), "covariates" 22,723 b
 
 Reads in original source_oriented_data_noMEDICARE.csv, performs a complete case analysis, restricts regions to Northeast, Southeast and Industrial Midwest, dichotomizes the exposure, removes some covariates and re-organizes relevant data into a list app.data (written as app.data.R).
 
-##run.app.R
+## run.app.R
 
 Calls on PSAfxn.R and BPSAfxn.R, performs both PSA and BPSA on app.data.R
 
