@@ -69,3 +69,14 @@ Calls on PSAfxn.R and BPSAfxn.R, performs both PSA and BPSA on app.data.R
 ## source_oriented_data_noMEDICARE.csv
 
 Data from Cummisky et. al. stripped of Medicare data, with simulated values for the outcome. 
+
+# Figure code
+
+## p1_sim_graphs.R
+
+Code to create Figures 1-3, Table B1
+
+## appfig.R
+
+Code to create Figures 4 and 5
+
